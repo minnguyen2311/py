@@ -1,0 +1,135 @@
+import os
+import openai
+
+openai.api_type = "azure"
+openai.api_base = "https://jet-hackathon-b.openai.azure.com"
+openai.api_key = 'insert key here'
+openai.api_version = "2023-05-15"
+
+prompt = '''
+Your job is to convert this text to pipe delimited CSV format
+
+Rules:
+
+- Only respond with CSV
+- You can never make menu items up, if it is not in the text provided, you must not add it to the pipe delimited CSV output. (Descriptions and allergens are exlcluded from this)
+
+Description rules:
+
+- Max 2 sentences
+- Always include main items of dish
+
+Menu item rules & guidelines:
+
+- If the item is in this list, omit it from the output. 
+- [drugs]
+
+All CSV output must be structured as pipe delimited. It must follow the rules:
+
+Columns = [GTIN|Type|Category|Product Name|Description|Regular Price|Pickup Price|Size Description (200 grams, 12 OZ, etc.)|Energy Content|Serving Size|isAlcohol|Image URL|Allergens]
+
+Type definitions:
+
+ITEM: Base item, such as burger or single food item
+OPTION-GROUP: A group of "options" on the dish, titled such as "Remove vegetables" or "Add vegetables"
+OPTION: Option that exists within an OPTION-GROUP such as "Broccoli" Which would imply it can be added or removed
+
+Column rules:
+
+- If a field is null or empty you must always include quotations such as ""
+
+
+GTIN Type: Can be null, do not fill if data not available
+Type: Can not be null, Can be one of type [ITEM, OPTION-GROUP, OPTION], refer to Type definitions
+Category: The category name that will be used to group the products (Example: Pizzas, Burgers, Mains, Sides)
+Product name: Can not be null, string
+Description: Can not be null, If a description does not exist, you can create one. It must follow the rules laid out above
+Regular price: Can not be null, Price of item on menu <float>
+Pick up price: Can not be null, Same as regular price
+Size Description: Can be null, do not fill if data not available
+Energy Content: Can be null, do not fill if data not available
+Serving Size: Can be null, do not fill if data not available
+isAlcohol: Boolean
+ImageURL: false
+Allergens: Create a list of all allergens that could be present on a dish. Display this as a list
+'''
+
+menu = '''
+Appetizers (Fried)
+
+Vegetable Samosa (3 pieces): $6.00
+Onion Bhaji (pakora 4 pieces) GF: $6.99
+Aloo Tikki (optional vegan) GF: $9.50
+Keema Samosa (3 pieces) DF: $6.00
+Paneer Pakora (6 pieces) GF: $8.99
+Gobi Pakora (6 pieces) GF, Vegan: $8.99
+Fish Pakora (5 pieces) GF: $8.99
+Chicken Pakora (6 pieces) GF, DF: $9.99
+Cheese Chilli GF: $13.99
+Garlic Prawn Chilli GF, DF: $14.99
+Chicken Chilli GF, DF: $14.99
+Mixed Platter: $14.99
+Tandoori Starter
+
+Chicken Tikka (4 pieces) GF: $8.99
+Delicious Curries
+
+Malai Tikka GF: $11.99
+Fish pieces or boneless chicken marinated in mild creamy spices then roasted in tandoor.
+Lamb Leg Steak GF: $13.99
+Haryali Kebab GF: $8.50
+Sheek Kebab (5 pieces) GF, DF: $8.50
+Prime Minced Lamb blended in fresh herbs and spices, skewered then grilled in tandoor.
+Tandoori Drumsticks (4 pieces) GF: $8.50
+Prawn Marination GF: $14.50
+Tandoori Chicken GF: Half $11.50 / Full $16.50
+Lamb Cutlets (4 pieces) GF: $14.99
+Tender Lamb Cutlets marinated in spices, herbs and yogurt then roasted in tandoor.
+Seafood Curries
+
+Masala (Fish or Prawn) GF: $16.99
+Goan (Fish or Prawns) GF, DF: $16.99
+Vegetable Curries
+
+Palak Paneer GF: $14.99
+Fresh spinach blended in spices and herbs, cooked with fresh homemade cheese.
+Karahi Paneer GF: $14.99
+Goat Curry GF, DF: $16.99
+
+Butter Chicken GF (nuts optional): $15.99
+Rajmah GF: $15.99
+Coconut Onion Chicken GF, DF: $15.99
+Cubed and chicken basic spices with fresh coriander.
+Achari Chicken GF, DF: $15.99
+Fresh pieces of boneless chicken cooked with fresh sliced capsicum, onion and ginger with fresh coriander.
+On the right side:
+
+Dhal Makhni GF: $14.99
+
+Black lentil, kidney beans and yellow lentils cooked in fresh spices with onion and fresh coriander.
+Aloo Baingan GF, Vegan: $14.99
+Aloo Matar GF, Vegan: $14.99
+Vegetable Korma GF: $14.99
+Dhaniya Masala GF, Vegan: $14.99
+Dhal Tadka GF: $14.99
+Matar Paneer Masala GF (nuts optional): $14.99
+Tomato Kofta GF: $14.99
+Cheese Kofta roasted dried fruits in thick butter sauce.
+Palak Ball with Palak Aloo GF: $14.99
+Mixed Vegetable Curry (No Gravy) GF, Vegan: $14.99
+Biryanis (Stir fried rice served with Raita)
+
+Veg Biryani Vegan, GF: $12.99
+Chicken Biryani DF, GF: $12.99
+Lamb Biryani DF, GF: $12.99
+'''
+
+completion = openai.ChatCompletion.create(
+  engine="gpt-4",
+  messages=[
+    {"role": "system", "content": prompt},
+    {"role": "user", "content": menu}
+  ]
+)
+
+print(completion['choices'][0]['message']['content'])
